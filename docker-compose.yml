@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pim
+      POSTGRES_PASSWORD: pim
+      POSTGRES_DB: product_db
+    # No host port published — the API reaches Postgres over the internal
+    # Docker network as "db:5432". Uncomment to connect from your host (e.g. DBeaver):
+    # ports:
+    #   - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://pim:pim@db:5432/product_db?schema=public"
+      PORT: "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

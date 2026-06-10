@@ -1,0 +1,177 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AttrSource {
+  FREE
+  OPTION
+  MASTER
+}
+
+enum TargetSystem {
+  SHARED
+  HIVA
+  MAGENTO
+  CRM
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum DeliveryState {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+model Attribute {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  label     String
+  dataType  String // text | number | boolean | date
+  inputType String // text | number | list | boolean | date
+  required  Boolean           @default(false)
+  system    Boolean           @default(false)
+  source    AttrSource        @default(FREE)
+  unit      String            @default("")
+  master    Master?           @relation(fields: [masterId], references: [id])
+  masterId  String?
+  options   AttributeOption[]
+  links     EntityAttribute[]
+  createdAt DateTime          @default(now())
+}
+
+model AttributeOption {
+  id          String    @id @default(cuid())
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  attributeId String
+  label       String
+  sortOrder   Int       @default(0)
+}
+
+model Master {
+  id         String        @id @default(cuid())
+  name       String
+  key        String        @unique
+  values     MasterValue[]
+  attributes Attribute[]
+  createdAt  DateTime      @default(now())
+}
+
+model MasterValue {
+  id        String  @id @default(cuid())
+  master    Master  @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  masterId  String
+  label     String
+  hiva      String  @default("")
+  magento   String  @default("")
+  crm       String  @default("")
+  sortOrder Int     @default(0)
+}
+
+model AttributeSet {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  system       Boolean          @default(false)
+  familyValues String[]         @default([])
+  groups       AttributeGroup[]
+  products     Product[]
+  createdAt    DateTime         @default(now())
+}
+
+model AttributeGroup {
+  id        String            @id @default(cuid())
+  set       AttributeSet      @relation(fields: [setId], references: [id], onDelete: Cascade)
+  setId     String
+  name      String
+  sortOrder Int               @default(0)
+  items     EntityAttribute[]
+}
+
+model EntityAttribute {
+  id          String         @id @default(cuid())
+  group       AttributeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  attribute   Attribute      @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  attributeId String
+  sortOrder   Int            @default(0)
+
+  @@unique([groupId, attributeId])
+}
+
+model Product {
+  id         String           @id @default(cuid())
+  set        AttributeSet     @relation(fields: [setId], references: [id])
+  setId      String
+  version    Int              @default(1)
+  deletedAt  DateTime?
+  values     ProductValue[]
+  deliveries DeliveryStatus[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model ProductRevision {
+  id        String   @id @default(cuid())
+  productId String
+  version   Int
+  action    String
+  actor     String   @default("system")
+  setId     String
+  summary   Json
+  values    Json
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model ProductValue {
+  id           String       @id @default(cuid())
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    String
+  attributeId  String
+  targetSystem TargetSystem @default(SHARED)
+  valueString  String?
+  valueNumber  Float?
+  valueBool    Boolean?
+  valueDate    DateTime?
+
+  @@unique([productId, attributeId, targetSystem])
+}
+
+model Outbox {
+  id            String       @id @default(cuid())
+  aggregateType String       @default("product")
+  aggregateId   String
+  eventType     String       @default("product.published")
+  payload       Json
+  targetSystems String[]
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  createdAt     DateTime     @default(now())
+  processedAt   DateTime?
+}
+
+model DeliveryStatus {
+  id           String        @id @default(cuid())
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    String
+  targetSystem TargetSystem
+  state        DeliveryState @default(PENDING)
+  attempts     Int           @default(0)
+  lastError    String?
+  version      Int           @default(1)
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([productId, targetSystem])
+}

@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: #09090B;       /* zinc-950 */
+  color: #FAFAFA;
+}
+::selection { background: #FAFAFA; color: #09090B; }
+/* sleek thin dark scrollbars */
+* { scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 8px; }
