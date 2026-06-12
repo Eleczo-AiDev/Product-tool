@@ -27,6 +27,8 @@ export default function AttributesView() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [setFilter, setSetFilter] = useState('');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   if (attrsQ.isLoading || setsQ.isLoading || mastersQ.isLoading) return <Spinner />;
   if (attrsQ.error || setsQ.error || mastersQ.error) return <ErrorNote error={attrsQ.error || setsQ.error || mastersQ.error} />;
@@ -44,6 +46,10 @@ export default function AttributesView() {
     (!selIds || selIds.has(a.id)) &&
     (!q || a.label.toLowerCase().includes(q) || a.code.toLowerCase().includes(q)));
   const activeFilters = (setFilter ? 1 : 0) + (q ? 1 : 0);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(pageStart, pageStart + pageSize);
 
   const onRemove = (a: Attribute) => {
     if (a.system) { alert('System attributes cannot be deleted.'); return; }
@@ -73,15 +79,15 @@ export default function AttributesView() {
               className="w-full rounded-lg border border-zinc-700 bg-zinc-950 pl-8 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500/50 focus:border-zinc-500"
               placeholder="Search by name or code…"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
             />
           </div>
-          <select className="text-sm rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-200 px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-500/50 focus:border-zinc-500" value={setFilter} onChange={(e) => setSetFilter(e.target.value)}>
+          <select className="text-sm rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-200 px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-500/50 focus:border-zinc-500" value={setFilter} onChange={(e) => { setSetFilter(e.target.value); setPage(1); }}>
             <option value="">All product types</option>
             {sets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           {activeFilters > 0 && (
-            <Btn variant="ghost" size="sm" onClick={() => { setSetFilter(''); setQuery(''); }}><X size={14} />Clear</Btn>
+            <Btn variant="ghost" size="sm" onClick={() => { setSetFilter(''); setQuery(''); setPage(1); }}><X size={14} />Clear</Btn>
           )}
         </div>
       )}
@@ -100,7 +106,7 @@ export default function AttributesView() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => (
+            {pageItems.map((a) => (
               <tr key={a.id} className="border-t border-zinc-800 hover:bg-zinc-800/60">
                 <td className="px-4 py-2.5 font-medium text-zinc-200">
                   {a.label}{a.unit && <span className="text-zinc-500 font-normal"> ({a.unit})</span>}
@@ -136,7 +142,28 @@ export default function AttributesView() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-zinc-600 mt-3">{filtered.length} of {attrs.length} attributes</p>
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between mt-3 text-sm text-zinc-400">
+          <div>Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)} of {filtered.length}</div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1 text-xs">
+              Rows
+              <select
+                className="rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-200 px-1.5 py-1"
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              >
+                {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <div className="flex items-center gap-1">
+              <Btn variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Prev</Btn>
+              <span className="px-1">Page {currentPage} / {totalPages}</span>
+              <Btn variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>Next</Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <AttributeEditor

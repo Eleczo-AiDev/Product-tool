@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, X, Tag, Layers, Save } from 'lucide-react';
+import { Plus, X, Tag, Layers, Save, Trash2 } from 'lucide-react';
 import { useAttributes, useSets, useSetMutations, useAttributeMutations } from '../api/hooks';
 import type { Attribute, AttributeSet } from '../api/client';
 import { Badge, Btn, Code, Spinner, ErrorNote, inputCls } from '../components/ui';
@@ -36,7 +36,7 @@ export default function SetsView() {
   const flash = useFlash();
   const attrsQ = useAttributes();
   const setsQ = useSets();
-  const { create, update } = useSetMutations();
+  const { create, update, remove } = useSetMutations();
   const { create: createAttr } = useAttributeMutations();
   const [openSet, setOpenSet] = useState<string | null>(null);
 
@@ -103,6 +103,7 @@ export default function SetsView() {
   const newSet = () => {
     const name = prompt('New set name', '');
     if (!name) return;
+    // start from the standard shared fields only — do NOT clone the currently open set
     create.mutate({ name }, {
       onSuccess: (created) => { setOpenSet(created.id); flash('Set created with the standard fields'); },
       onError: (e) => alert(e instanceof Error ? e.message : 'Failed'),
@@ -129,6 +130,19 @@ export default function SetsView() {
           </button>
         ))}
       </div>
+
+      {set && (
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-zinc-100">{set.name}</h3>
+          <Btn variant="danger" size="sm" onClick={() => {
+            if (!confirm(`Delete the set "${set.name}"? This removes the product type itself (its attributes stay available for other sets).`)) return;
+            remove.mutate(set.id, {
+              onSuccess: () => { setOpenSet(null); flash('Set deleted'); },
+              onError: (e) => alert(e instanceof Error ? e.message : 'Could not delete this set'),
+            });
+          }} disabled={remove.isPending}><Trash2 size={14} />Delete set</Btn>
+        </div>
+      )}
 
       {set && (
         <div className="grid grid-cols-3 gap-4">
