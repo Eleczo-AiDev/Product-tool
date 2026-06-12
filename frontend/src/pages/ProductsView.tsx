@@ -444,13 +444,17 @@ function ProductEditor({
     return created.id;
   };
 
-  // the product_code value (identity) — required before anything can be saved
-  const codeAttr = orderedAttrs.find((a) => a.code === 'product_code');
-  const productCode = codeAttr ? String(draft.values[codeAttr.id]?.shared ?? '').trim() : '';
+  // identity fields that must be present before a product can be saved
+  const REQUIRED_TO_SAVE = ['product_code', 'name', 'brand'];
+  const missingToSave = REQUIRED_TO_SAVE
+    .map((code) => orderedAttrs.find((a) => a.code === code))
+    .filter((a): a is (typeof orderedAttrs)[number] => !!a)
+    .filter((a) => !String(draft.values[a.id]?.shared ?? '').trim())
+    .map((a) => a.label);
 
   const onSave = async () => {
-    if (!productCode) {
-      alert('Please enter a Product code before saving.');
+    if (missingToSave.length) {
+      alert('Please fill these before saving: ' + missingToSave.join(', '));
       return;
     }
     try {
