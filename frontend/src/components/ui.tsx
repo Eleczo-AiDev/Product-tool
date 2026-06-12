@@ -14,10 +14,10 @@ export function Code({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-xs bg-zinc-800 text-zinc-300 rounded px-1.5 py-0.5 border border-zinc-700/60">{children}</span>;
 }
 
-export function Field({ label, children, hint, error }: { label: string; children: React.ReactNode; hint?: string; error?: string }) {
+export function Field({ label, children, hint, error, required }: { label: React.ReactNode; required?: boolean; children: React.ReactNode; hint?: string; error?: string }) {
   return (
     <label className="block mb-3">
-      <div className="text-sm font-medium text-zinc-300 mb-1">{label}</div>
+      <div className="text-sm font-medium text-zinc-300 mb-1">{label}{required && <span className="text-red-400"> *</span>}</div>
       {children}
       {hint && !error && <div className="text-xs text-zinc-500 mt-1">{hint}</div>}
       {error && (

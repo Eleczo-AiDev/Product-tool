@@ -3,6 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const SYSTEM_GENERAL_CODES = ['product_code', 'name', 'brand'];
 
+const STANDARD_GROUPS: { name: string; codes: string[] }[] = [
+  { name: 'Identification', codes: ['product_code', 'short_name', 'name', 'reference_no', 'brand', 'item_family', 'item_subfamily', 'item_category', 'item_subcategory', 'product_type'] },
+  { name: 'Commerce / e-shop', codes: ['product_availability', 'visibility', 'sync_in_eshop', 'magento_sync_status', 'price', 'front_end_unit', 'min_order_qty'] },
+  { name: 'Logistics / Inventory', codes: ['hsn_code', 'product_units', 'dispatch_time', 'lead_time', 'valuation_method', 'batch_active', 'reorder_level', 'cap_noncap'] },
+];
+
 function normalizeFamilies(input: any): string[] {
   if (!input) return [];
   const arr = Array.isArray(input) ? input : String(input).split(',');
@@ -53,10 +59,15 @@ export class SetsService {
       const base = await this.get(dto.basedOnSetId);
       groups = base.groups.map((g: any) => ({ name: g.name, attributeIds: [...g.attributeIds] }));
     } else {
-      const sys = await this.prisma.attribute.findMany({ where: { code: { in: SYSTEM_GENERAL_CODES } } });
+      const allCodes = STANDARD_GROUPS.flatMap((g) => g.codes);
+      const attrs = await this.prisma.attribute.findMany({ where: { code: { in: allCodes } } });
       const byCode: Record<string, string> = {};
-      sys.forEach((a) => (byCode[a.code] = a.id));
-      groups = [{ name: 'General', attributeIds: SYSTEM_GENERAL_CODES.map((c) => byCode[c]).filter(Boolean) }];
+      attrs.forEach((a) => (byCode[a.code] = a.id));
+      groups = STANDARD_GROUPS.map((g) => ({ name: g.name, attributeIds: g.codes.map((c) => byCode[c]).filter(Boolean) })).filter((g) => g.attributeIds.length > 0);
+      if (groups.length === 0) {
+        const sys = await this.prisma.attribute.findMany({ where: { code: { in: SYSTEM_GENERAL_CODES } } });
+        groups = [{ name: 'General', attributeIds: sys.map((a) => a.id) }];
+      }
     }
     const set = await this.prisma.attributeSet.create({ data: { name: dto.name, familyValues: normalizeFamilies(dto.familyValues) } });
     await this.writeGroups(set.id, groups);

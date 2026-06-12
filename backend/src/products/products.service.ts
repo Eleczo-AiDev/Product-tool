@@ -114,6 +114,7 @@ export class ProductsService {
       setId: product.setId,
       setName: product.set?.name,
       version: product.version,
+      deletedAt: product.deletedAt || null,
       values,
       summary: { code: disp('product_code'), name: disp('name'), brand: disp('brand') },
       deliveries,

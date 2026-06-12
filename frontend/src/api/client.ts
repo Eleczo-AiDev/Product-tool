@@ -115,6 +115,7 @@ export interface Product {
   setId: string;
   setName: string;
   version: number;
+  deletedAt?: string | null;
   values: ValuesMap;
   summary: { code: string; name: string; brand: string };
   deliveries: Record<string, string>;

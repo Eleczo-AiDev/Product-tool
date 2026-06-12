@@ -437,19 +437,27 @@ function ProductEditor({
 
   const persist = async (): Promise<string> => {
     const dto = { setId: draft.setId, values: draft.values };
-    if (draft.id) {
-      await update.mutateAsync({ id: draft.id, dto });
-      return draft.id;
+    const existingId = draftInit.id;
+    if (existingId) {
+      await update.mutateAsync({ id: existingId, dto });
+      return existingId;
     }
     const created = await create.mutateAsync(dto);
     setDraft((d) => ({ ...d, id: created.id }));
     return created.id;
   };
 
+  const codeAttr = orderedAttrs.find((a) => a.code === 'product_code');
+  const productCode = codeAttr ? String(draft.values[codeAttr.id]?.shared ?? '').trim() : '';
+
   const onSave = async () => {
+    if (!productCode) {
+      alert('Please enter a Product code before saving.');
+      return;
+    }
     try {
       await persist();
-      flash('Product saved');
+      flash(draftInit.id ? 'Product updated' : 'Product saved');
       onClose();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Save failed');
@@ -534,6 +542,16 @@ function ProductEditor({
   );
 }
 
+function relTime(iso?: string | null): string {
+  if (!iso) return '';
+  const d = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d / 60) + ' min ago';
+  if (d < 86400) return Math.floor(d / 3600) + ' hr ago';
+  if (d < 604800) return Math.floor(d / 86400) + ' days ago';
+  return new Date(iso).toLocaleDateString();
+}
+
 function DeletedModal({ onClose }: { onClose: () => void }) {
   const flash = useFlash();
   const delQ = useDeletedProducts(true);
@@ -541,7 +559,7 @@ function DeletedModal({ onClose }: { onClose: () => void }) {
   const items = delQ.data || [];
   return (
     <Modal title="Recently deleted" onClose={onClose}>
-      <p className="text-sm text-zinc-400 mb-3">Deleted products are kept here so you can restore them. Restoring brings the product back exactly as it was.</p>
+      <p className="text-sm text-zinc-400 mb-3">Deleted products are kept here and can be restored at any time — there is no automatic purge, so nothing is lost. Restoring brings the product back exactly as it was.</p>
       {delQ.isLoading && <div className="text-sm text-zinc-500 py-4">Loading…</div>}
       {!delQ.isLoading && items.length === 0 && <div className="text-sm text-zinc-500 py-6 text-center">Nothing deleted.</div>}
       <div className="divide-y divide-zinc-800">
@@ -550,7 +568,8 @@ function DeletedModal({ onClose }: { onClose: () => void }) {
             <Code>{p.summary.code || '—'}</Code>
             <span className="text-zinc-200 truncate">{p.summary.name || '(no name)'}</span>
             <span className="text-zinc-500 text-xs">{p.setName}</span>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-zinc-500 whitespace-nowrap" title={p.deletedAt ? new Date(p.deletedAt).toLocaleString() : ''}>deleted {relTime(p.deletedAt)}</span>
               <Btn size="sm" variant="outline" disabled={restore.isPending}
                 onClick={() => restore.mutate(p.id, { onSuccess: () => flash('Product restored') })}>
                 <RotateCcw size={13} />Restore

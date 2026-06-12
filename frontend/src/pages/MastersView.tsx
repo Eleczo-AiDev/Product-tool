@@ -39,7 +39,7 @@ export default function MastersView() {
     setDirty(true);
   };
   const addValue = () => {
-    setDraft((rows) => [...rows, { id: uid(), label: 'New value', hiva: '', magento: '', crm: '', sortOrder: rows.length }]);
+    setDraft((rows) => [...rows, { id: uid(), label: '', hiva: '', magento: '', crm: '', sortOrder: rows.length }]);
     setDirty(true);
   };
   const delValue = (vid: string) => {
@@ -100,11 +100,11 @@ export default function MastersView() {
               {draft.map((v) => (
                 <tr key={v.id} className="border-t border-zinc-800">
                   <td className="px-3 py-1.5">
-                    <input className="w-full rounded-lg bg-transparent text-zinc-100 placeholder-zinc-600 border border-transparent hover:border-zinc-700 focus:border-zinc-500 focus:bg-zinc-950 outline-none px-2 py-1 font-medium" value={v.label} onChange={(e) => setCell(v.id, 'label', e.target.value)} />
+                    <input className="w-full rounded-lg bg-transparent text-zinc-100 placeholder-zinc-600 border border-transparent hover:border-zinc-700 focus:border-zinc-500 focus:bg-zinc-950 outline-none px-2 py-1 font-medium" placeholder="Type a value…" value={v.label} onChange={(e) => setCell(v.id, 'label', e.target.value)} />
                   </td>
                   {SYSTEMS.map((s) => (
                     <td key={s.id} className="px-3 py-1.5">
-                      <input className="w-full rounded-lg bg-transparent text-zinc-300 placeholder-zinc-600 border border-transparent hover:border-zinc-700 focus:border-zinc-500 focus:bg-zinc-950 outline-none px-2 py-1 font-mono text-xs" value={(v as any)[s.id] || ''} onChange={(e) => setCell(v.id, s.id, e.target.value)} />
+                      <input className="w-full rounded-lg bg-transparent text-zinc-300 placeholder-zinc-600 border border-transparent hover:border-zinc-700 focus:border-zinc-500 focus:bg-zinc-950 outline-none px-2 py-1 font-mono text-xs" placeholder={s.id.toUpperCase()} value={(v as any)[s.id] || ''} onChange={(e) => setCell(v.id, s.id, e.target.value)} />
                     </td>
                   ))}
                   <td className="px-3 py-1.5 text-right">

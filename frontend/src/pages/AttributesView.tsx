@@ -197,18 +197,18 @@ function AttributeEditor({
   return (
     <Modal title={isNew ? 'New attribute' : 'Edit attribute'} onClose={onClose}>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Label"><input className={inputCls} value={d.label} onChange={(e) => set('label', e.target.value)} /></Field>
-        <Field label="Code" hint={isNew ? 'lowercase_with_underscores · immutable once created' : 'immutable'}>
+        <Field label="Label" required><input className={inputCls} value={d.label} onChange={(e) => set('label', e.target.value)} /></Field>
+        <Field label="Code" required hint={isNew ? 'lowercase letters, numbers & underscores · immutable once created' : 'immutable'}>
           <input
             className={inputCls + (isNew ? '' : ' bg-zinc-800')}
             disabled={!isNew}
             value={d.code}
-            onChange={(e) => set('code', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+            onChange={(e) => set('code', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
           />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Input type" hint={isNew ? '' : 'data type is immutable'}>
+        <Field label="Input type" hint={isNew ? 'Text, Number, List (dropdown), Yes/No, or Date — how the value is entered' : 'data type is immutable'}>
           <select className={inputCls} value={d.inputType} disabled={!isNew} onChange={(e) => set('inputType', e.target.value)}>
             <option value="text">Text</option>
             <option value="number">Number</option>

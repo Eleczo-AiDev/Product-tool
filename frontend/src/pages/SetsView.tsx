@@ -103,8 +103,8 @@ export default function SetsView() {
   const newSet = () => {
     const name = prompt('New set name', '');
     if (!name) return;
-    create.mutate({ name, basedOnSetId: set?.id }, {
-      onSuccess: (created) => { setOpenSet(created.id); flash('Set created (cloned structure)'); },
+    create.mutate({ name }, {
+      onSuccess: (created) => { setOpenSet(created.id); flash('Set created with the standard fields'); },
       onError: (e) => alert(e instanceof Error ? e.message : 'Failed'),
     });
   };
