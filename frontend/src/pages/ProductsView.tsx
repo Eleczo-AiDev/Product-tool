@@ -3,7 +3,7 @@ import {
   Plus, Trash2, Pencil, Download, Upload, Send, ChevronDown, ChevronRight,
   AlertCircle, Check, CircleCheck, CircleDashed, Layers, History, RotateCcw, Filter, Search, X,
 } from 'lucide-react';
-import { useAttributes, useMasters, useSets, useProducts, useProductMutations, useMasterMutations, useProductHistory, useDeletedProducts } from '../api/hooks';
+import { useAttributes, useMasters, useSets, useProducts, useProductMutations, useMasterMutations, useProductHistory } from '../api/hooks';
 import type { Attribute, AttributeSet, Master, Product, ValuesMap } from '../api/client';
 import { api } from '../api/client';
 import { Badge, Btn, Code, Modal, Spinner, ErrorNote, inputCls } from '../components/ui';
@@ -22,7 +22,6 @@ export default function ProductsView() {
   const [editing, setEditing] = useState<Product | DraftProduct | null>(null);
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [deletedOpen, setDeletedOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [q, setQ] = useState('');
   const [setF, setSetF] = useState('');
@@ -83,7 +82,6 @@ export default function ProductsView() {
           <Btn variant={filtersOpen || activeFilters ? 'primary' : 'outline'} size="sm" onClick={() => setFiltersOpen((v) => !v)}>
             <Filter size={14} />Filters{activeFilters ? ` (${activeFilters})` : ''}
           </Btn>
-          <Btn variant="ghost" size="sm" onClick={() => setDeletedOpen(true)}><Trash2 size={14} />Deleted</Btn>
           <Btn onClick={() => setCreating(true)}><Plus size={15} />New product</Btn>
         </div>
       </div>
@@ -180,7 +178,6 @@ export default function ProductsView() {
       )}
 
       {importing && <ImportModal sets={sets} attrs={attrs} onClose={() => setImporting(false)} />}
-      {deletedOpen && <DeletedModal onClose={() => setDeletedOpen(false)} />}
 
       {editing && (
         <ProductEditor
@@ -437,7 +434,7 @@ function ProductEditor({
 
   const persist = async (): Promise<string> => {
     const dto = { setId: draft.setId, values: draft.values };
-    const existingId = draftInit.id;
+    const existingId = draftInit.id; // stable: an opened product always updates, never creates
     if (existingId) {
       await update.mutateAsync({ id: existingId, dto });
       return existingId;
@@ -447,6 +444,7 @@ function ProductEditor({
     return created.id;
   };
 
+  // the product_code value (identity) — required before anything can be saved
   const codeAttr = orderedAttrs.find((a) => a.code === 'product_code');
   const productCode = codeAttr ? String(draft.values[codeAttr.id]?.shared ?? '').trim() : '';
 
@@ -537,46 +535,6 @@ function ProductEditor({
           <Btn variant="outline" onClick={onSave} disabled={busy}>Save draft</Btn>
           <Btn variant="dark" onClick={onPublish} disabled={errorCount > 0 || busy}><Send size={14} />Publish</Btn>
         </div>
-      </div>
-    </Modal>
-  );
-}
-
-function relTime(iso?: string | null): string {
-  if (!iso) return '';
-  const d = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d / 60) + ' min ago';
-  if (d < 86400) return Math.floor(d / 3600) + ' hr ago';
-  if (d < 604800) return Math.floor(d / 86400) + ' days ago';
-  return new Date(iso).toLocaleDateString();
-}
-
-function DeletedModal({ onClose }: { onClose: () => void }) {
-  const flash = useFlash();
-  const delQ = useDeletedProducts(true);
-  const { restore } = useProductMutations();
-  const items = delQ.data || [];
-  return (
-    <Modal title="Recently deleted" onClose={onClose}>
-      <p className="text-sm text-zinc-400 mb-3">Deleted products are kept here and can be restored at any time — there is no automatic purge, so nothing is lost. Restoring brings the product back exactly as it was.</p>
-      {delQ.isLoading && <div className="text-sm text-zinc-500 py-4">Loading…</div>}
-      {!delQ.isLoading && items.length === 0 && <div className="text-sm text-zinc-500 py-6 text-center">Nothing deleted.</div>}
-      <div className="divide-y divide-zinc-800">
-        {items.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 py-2 text-sm">
-            <Code>{p.summary.code || '—'}</Code>
-            <span className="text-zinc-200 truncate">{p.summary.name || '(no name)'}</span>
-            <span className="text-zinc-500 text-xs">{p.setName}</span>
-            <div className="ml-auto flex items-center gap-3">
-              <span className="text-xs text-zinc-500 whitespace-nowrap" title={p.deletedAt ? new Date(p.deletedAt).toLocaleString() : ''}>deleted {relTime(p.deletedAt)}</span>
-              <Btn size="sm" variant="outline" disabled={restore.isPending}
-                onClick={() => restore.mutate(p.id, { onSuccess: () => flash('Product restored') })}>
-                <RotateCcw size={13} />Restore
-              </Btn>
-            </div>
-          </div>
-        ))}
       </div>
     </Modal>
   );

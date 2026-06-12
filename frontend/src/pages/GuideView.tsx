@@ -43,7 +43,7 @@ function H({ id, children }: { id: string; children: React.ReactNode }) {
 
 const SECTIONS = [
   ['quickstart', '1. Quick start'],
-  ['workspaces', '2. The four workspaces'],
+  ['workspaces', '2. The workspaces'],
   ['products', '3. The Products screen'],
   ['editing', '4. Creating & editing a product'],
   ['import', '5. Importing products'],
@@ -80,7 +80,7 @@ export default function GuideView() {
         <H id="quickstart">1. Quick start (first 15 minutes)</H>
         <p className="text-sm text-zinc-200">This takes one product from nothing to publish-ready.</p>
         <ol className="list-decimal ml-5 my-3 space-y-1.5 text-sm text-zinc-200">
-          <li>You land on <b>Products</b>. The top tabs switch between Products, Attribute Sets, Attributes, Masters and this Guide.</li>
+          <li>You land on <b>Products</b>. The left sidebar switches between Products, Attribute Sets, Attributes, Masters, Audit Trail, Deleted and this Guide.</li>
           <li>Check your product types under <b>Attribute Sets</b> (e.g. MCCB, Wire & Cable). Create one if it’s missing (§6).</li>
           <li>Add one product: <b>Products → New product →</b> pick the set → fill the form (§4). Red asterisks mark mandatory fields.</li>
           <li>Or bulk-load: <b>Products → Import →</b> choose a CSV/Excel and let it auto-detect the type (§5).</li>
@@ -90,7 +90,7 @@ export default function GuideView() {
         <Callout kind="note">Publishing currently runs as a verified dry-run — it produces each system’s payload and marks delivery, but doesn’t yet write to the live Magento/CRM/HIVA. See §8.</Callout>
 
         <H id="workspaces">2. The four workspaces</H>
-        <p className="text-sm text-zinc-200">Everything lives under the top tabs. Most work is on Products; the rest is occasional setup.</p>
+        <p className="text-sm text-zinc-200">Everything lives in the left sidebar. Most work is on Products; the rest is occasional setup.</p>
         <div className="overflow-x-auto my-3">
           <table className="w-full text-sm border border-zinc-800">
             <thead><tr className="bg-zinc-800 text-white text-left"><th className="px-3 py-2">Tab</th><th className="px-3 py-2">What it’s for</th></tr></thead>
@@ -98,7 +98,9 @@ export default function GuideView() {
               {[['Products', 'Create, find, edit, import, export and publish products. Your main screen.'],
                 ['Attribute Sets', 'Define product types: which fields each type has, and the routing values that send imported rows to it.'],
                 ['Attributes', 'Define individual fields (label, type, dropdown options, mandatory flag).'],
-                ['Masters', 'Maintain controlled lists like Item Brand, each value carrying its HIVA/Magento/CRM equivalent.']].map((r, i) => (
+                ['Masters', 'Maintain controlled lists like Item Brand, each value carrying its HIVA/Magento/CRM equivalent.'],
+                ['Audit Trail', 'A live log of every change — who created, edited, published, reverted, restored or deleted what, and when.'],
+                ['Deleted', 'Products you removed, kept safely so you can restore any of them. Nothing is purged automatically.']].map((r, i) => (
                 <tr key={r[0]} className={i % 2 ? 'bg-zinc-800/40' : ''}><td className="px-3 py-2 font-medium border-t border-zinc-800">{r[0]}</td><td className="px-3 py-2 border-t border-zinc-800">{r[1]}</td></tr>
               ))}
             </tbody>
@@ -127,10 +129,11 @@ export default function GuideView() {
           [2, <><b>Item Brand (master)</b> — pick a brand, or choose “＋ Add new…” to create one on the spot.</>],
           [3, <><b>per-system toggle</b> — expand to override a field’s value for HIVA, Magento or CRM individually.</>],
           [4, <><b>Per-system payload preview</b> — the exact data each system will receive; leave a system blank to reuse the shared value.</>],
-          [5, <><b>Save draft / Publish</b> — save without sending, or validate-and-queue to all systems.</>],
+          [5, <><b>Save draft / Publish</b> — save without sending, or validate-and-queue to all systems. A <b>Product code is required</b> before either will save.</>],
         ]} />
         <Callout kind="when"><b>Per-system overrides:</b> only when a system needs a different representation (e.g. Poles = “3P” shared, but “POLE_3” for CRM). Otherwise enter the value once as shared and all three use it.</Callout>
-        <Callout kind="caution"><b>Product Code must be unique.</b> Saving a code that already exists is rejected — this is what prevents the same product being created twice.</Callout>
+        <Callout kind="caution"><b>Product Code must be unique, and is required to save.</b> Saving a code that already exists is rejected — this prevents duplicates. Re-opening a saved product and saving again <b>updates that same product</b>; it never creates a new one.</Callout>
+        <Callout kind="tip"><b>History &amp; restore.</b> Open any product and click <b>History</b> to see every past version and <b>Restore</b> to roll it back. Deleting a product doesn’t lose it — it moves to the <b>Deleted</b> screen, where you can restore it any time.</Callout>
 
         <H id="import">5. Importing products</H>
         <p className="text-sm text-zinc-200">Import turns a spreadsheet into products in one go. Headers are matched to fields by label or code, so files from elsewhere usually map without renaming.</p>
@@ -161,7 +164,7 @@ export default function GuideView() {
         <Figure src="/guide/sets.png" alt="Attribute Sets screen" caption="Figure 4 — the Attribute Sets screen." />
         <Annot items={[
           [1, <><b>Set list</b> — your product types; click one to edit it.</>],
-          [2, <><b>New set</b> — add a product type.</>],
+          [2, <><b>New set</b> — adds a product type that starts with the <b>standard shared fields</b> (Identification, Commerce, Logistics). It does <i>not</i> copy another type’s technical fields, so a new set won’t inherit MCCB’s Poles, Breaking capacity, etc.</>],
           [3, <><b>Routing values</b> — the Item Category / Subcategory / Family values that send an imported row here. Edit and Save; no code change.</>],
           [4, <><b>Groups</b> — the field sections on the form. Identification / Commerce / Logistics are shared by every type; Technical differs per type.</>],
         ]} />
@@ -187,7 +190,7 @@ export default function GuideView() {
             </tbody>
           </table>
         </div>
-        <Callout kind="note">These are display labels and can be renamed on the Attributes screen without any software change.</Callout>
+        <Callout kind="note">These are display labels and can be renamed on the Attributes screen without any software change. On Masters, <b>Add value</b> gives you an empty row — just type the value and its HIVA/Magento/CRM equivalents.</Callout>
 
         <H id="publish">8. Publishing</H>
         <p className="text-sm text-zinc-200">Publish validates the product, then queues it to HIVA, Magento and CRM, showing a delivery status (Pending / Delivered / Failed) per system. You can publish one product or many.</p>

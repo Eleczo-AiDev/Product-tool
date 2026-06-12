@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Box, Layers, List as ListIcon, Database, PackageSearch, Check, BookOpen, Menu, ScrollText } from 'lucide-react';
+import { Box, Layers, List as ListIcon, Database, PackageSearch, Check, BookOpen, Menu, ScrollText, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import ProductsView from './pages/ProductsView';
 import SetsView from './pages/SetsView';
@@ -7,11 +7,12 @@ import AttributesView from './pages/AttributesView';
 import MastersView from './pages/MastersView';
 import GuideView from './pages/GuideView';
 import AuditView from './pages/AuditView';
+import DeletedView from './pages/DeletedView';
 
 const ToastCtx = createContext<(msg: string) => void>(() => {});
 export const useFlash = () => useContext(ToastCtx);
 
-type Tab = 'products' | 'sets' | 'attributes' | 'masters' | 'audit' | 'guide';
+type Tab = 'products' | 'sets' | 'attributes' | 'masters' | 'audit' | 'deleted' | 'guide';
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('products');
@@ -25,6 +26,7 @@ export default function App() {
     { id: 'attributes', label: 'Attributes', icon: ListIcon, hint: 'The fields' },
     { id: 'masters', label: 'Masters', icon: Database, hint: 'Brand & lists' },
     { id: 'audit', label: 'Audit Trail', icon: ScrollText, hint: 'Who changed what' },
+    { id: 'deleted', label: 'Deleted', icon: Trash2, hint: 'Restore removed products' },
     { id: 'guide', label: 'Guide', icon: BookOpen, hint: 'How to use it' },
   ];
   const active = tabs.find((t) => t.id === tab)!;
@@ -107,6 +109,7 @@ export default function App() {
             {tab === 'attributes' && <AttributesView />}
             {tab === 'masters' && <MastersView />}
             {tab === 'audit' && <AuditView />}
+            {tab === 'deleted' && <DeletedView />}
             {tab === 'guide' && <GuideView />}
           </main>
         </div>
